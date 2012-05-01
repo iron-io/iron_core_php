@@ -7,7 +7,7 @@
  * @link http://dev.iron.io/
  * @version 0.0.1
  * @package IronCore
- * @copyright Feel free to copy, steal, take credit for, or whatever you feel like doing with this code. ;)
+ * @copyright BSD 2-Clause License. See LICENSE file.
  */
 
 class IronCore{
