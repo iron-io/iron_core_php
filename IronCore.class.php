@@ -42,6 +42,7 @@ class IronCore{
 
     public  $max_retries = 5;
     public  $debug_enabled = false;
+    public  $ssl_verifypeer = true;
 
 
     protected static function dateRfc3339($timestamp = 0) {
@@ -200,7 +201,7 @@ class IronCore{
                 curl_setopt($s, CURLOPT_URL, $fullUrl);
                 break;
         }
-        curl_setopt($s, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($s, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
         curl_setopt($s, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($s, CURLOPT_HTTPHEADER, $this->compiledHeaders());
         return $this->callWithRetries($s);
