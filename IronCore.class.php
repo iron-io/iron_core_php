@@ -5,7 +5,7 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.0.1
+ * @version 0.0.2
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
@@ -24,6 +24,7 @@ class IronCore{
     const HTTP_ACCEPTED = 202;
 
     const POST   = 'POST';
+    const PUT    = 'PUT';
     const GET    = 'GET';
     const DELETE = 'DELETE';
 
@@ -180,13 +181,16 @@ class IronCore{
         }
         switch ($type) {
             case self::DELETE:
-                $fullUrl = $url . '?' . http_build_query($params);
-                $this->debug('apiCall fullUrl', $fullUrl);
-                curl_setopt($s, CURLOPT_URL, $fullUrl);
+                $url .= '?' . http_build_query($params);
+                curl_setopt($s, CURLOPT_URL, $url);
                 curl_setopt($s, CURLOPT_CUSTOMREQUEST, self::DELETE);
                 break;
+            case self::PUT:
+                curl_setopt($s, CURLOPT_URL, $url);
+                curl_setopt($s, CURLOPT_CUSTOMREQUEST, self::PUT);
+                curl_setopt($s, CURLOPT_POSTFIELDS, json_encode($params));
+                break;
             case self::POST:
-                $this->debug('apiCall url', $url);
                 curl_setopt($s, CURLOPT_URL,  $url);
                 curl_setopt($s, CURLOPT_POST, true);
                 if ($raw_post_data){
@@ -196,11 +200,11 @@ class IronCore{
                 }
                 break;
             case self::GET:
-                $fullUrl = $url . '?' . http_build_query($params);
-                $this->debug('apiCall fullUrl', $fullUrl);
-                curl_setopt($s, CURLOPT_URL, $fullUrl);
+                $url .= '?' . http_build_query($params);
+                curl_setopt($s, CURLOPT_URL, $url);
                 break;
         }
+        $this->debug('apiCall full Url', $url);
         curl_setopt($s, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
         curl_setopt($s, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($s, CURLOPT_HTTPHEADER, $this->compiledHeaders());
