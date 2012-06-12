@@ -11,7 +11,7 @@
  */
 
 class IronCore{
-    protected $core_version = '0.0.1';
+    protected $core_version = '0.0.2';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -214,6 +214,9 @@ class IronCore{
     protected function callWithRetries($s){
         for ($retry = 0; $retry < $this->max_retries; $retry++){
             $_out = curl_exec($s);
+            if($_out === false) {
+                $this->reportHttpError(0, curl_error($s));
+            }
             $status = curl_getinfo($s, CURLINFO_HTTP_CODE);
             switch ($status) {
                 case self::HTTP_OK:
@@ -238,7 +241,8 @@ class IronCore{
             }
         }
         curl_close($s);
-        return $this->reportHttpError(503, "Service unavailable");
+        $this->reportHttpError(503, "Service unavailable");
+        return null;
     }
 
     protected function reportHttpError($status, $text){
