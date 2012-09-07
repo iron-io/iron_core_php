@@ -11,7 +11,7 @@
  */
 
 class IronCore{
-    protected $core_version = '0.0.2';
+    protected $core_version = '0.0.3';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -44,6 +44,7 @@ class IronCore{
     public  $max_retries = 5;
     public  $debug_enabled = false;
     public  $ssl_verifypeer = true;
+    public  $connection_timeout = 60;
 
 
     protected static function dateRfc3339($timestamp = 0) {
@@ -208,6 +209,7 @@ class IronCore{
         curl_setopt($s, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
         curl_setopt($s, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($s, CURLOPT_HTTPHEADER, $this->compiledHeaders());
+        curl_setopt($s, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
         return $this->callWithRetries($s);
     }
 
