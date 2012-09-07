@@ -5,7 +5,7 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.0.2
+ * @version 0.0.3
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
