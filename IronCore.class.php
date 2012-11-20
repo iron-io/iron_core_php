@@ -5,13 +5,13 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.0.3
+ * @version 0.1.0
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
 
 class IronCore{
-    protected $core_version = '0.0.3';
+    protected $core_version = '0.1.0';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -40,12 +40,18 @@ class IronCore{
     protected $protocol;
     protected $host;
     protected $port;
+    protected $curl = null;
 
     public  $max_retries = 5;
     public  $debug_enabled = false;
     public  $ssl_verifypeer = true;
     public  $connection_timeout = 60;
 
+    public function __destruct() {
+        if ($this->curl != null){
+            curl_close($this->curl);
+        }
+    }
 
     protected static function dateRfc3339($timestamp = 0) {
         if ($timestamp instanceof DateTime) {
@@ -176,61 +182,64 @@ class IronCore{
     protected function apiCall($type, $url, $params = array(), $raw_post_data = null){
         $url = "{$this->url}$url";
 
-        $s = curl_init();
+        if ($this->curl == null) $this->curl = curl_init();
+
         if (! isset($params['oauth'])) {
           $params['oauth'] = $this->token;
         }
         switch ($type) {
             case self::DELETE:
                 $url .= '?' . http_build_query($params);
-                curl_setopt($s, CURLOPT_URL, $url);
-                curl_setopt($s, CURLOPT_CUSTOMREQUEST, self::DELETE);
+                curl_setopt($this->curl, CURLOPT_URL, $url);
+                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::DELETE);
                 break;
             case self::PUT:
-                curl_setopt($s, CURLOPT_URL, $url);
-                curl_setopt($s, CURLOPT_CUSTOMREQUEST, self::PUT);
-                curl_setopt($s, CURLOPT_POSTFIELDS, json_encode($params));
+                curl_setopt($this->curl, CURLOPT_URL, $url);
+                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::PUT);
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
                 break;
             case self::POST:
-                curl_setopt($s, CURLOPT_URL,  $url);
-                curl_setopt($s, CURLOPT_POST, true);
+                curl_setopt($this->curl, CURLOPT_URL,  $url);
+                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
+                curl_setopt($this->curl, CURLOPT_POST, true);
                 if ($raw_post_data){
-                    curl_setopt($s, CURLOPT_POSTFIELDS, $raw_post_data);
+                    curl_setopt($this->curl, CURLOPT_POSTFIELDS, $raw_post_data);
                 }else{
-                    curl_setopt($s, CURLOPT_POSTFIELDS, json_encode($params));
+                    curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
                 }
                 break;
             case self::GET:
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, null);
+                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::GET);
+                curl_setopt($this->curl, CURLOPT_HTTPGET, true);
                 $url .= '?' . http_build_query($params);
-                curl_setopt($s, CURLOPT_URL, $url);
+                curl_setopt($this->curl, CURLOPT_URL, $url);
                 break;
         }
-        $this->debug('apiCall full Url', $url);
-        curl_setopt($s, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
-        curl_setopt($s, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($s, CURLOPT_HTTPHEADER, $this->compiledHeaders());
-        curl_setopt($s, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
-        return $this->callWithRetries($s);
+        $this->debug("API $type", $url);
+        curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
+        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledHeaders());
+        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
+        return $this->callWithRetries();
     }
 
-    protected function callWithRetries($s){
+    protected function callWithRetries(){
         for ($retry = 0; $retry < $this->max_retries; $retry++){
-            $_out = curl_exec($s);
+            $_out = curl_exec($this->curl);
             if($_out === false) {
-                $this->reportHttpError(0, curl_error($s));
+                $this->reportHttpError(0, curl_error($this->curl));
             }
-            $status = curl_getinfo($s, CURLINFO_HTTP_CODE);
+            $status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
             switch ($status) {
                 case self::HTTP_OK:
                 case self::HTTP_CREATED:
                 case self::HTTP_ACCEPTED:
-                    curl_close($s);
                     return $_out;
                 case Http_Exception::INTERNAL_ERROR:
                     if (strpos($_out, "EOF") !== false){
                         self::waitRandomInterval($retry);
                     }else{
-                        curl_close($s);
                         $this->reportHttpError($status, $_out);
                     }
                     break;
@@ -238,11 +247,9 @@ class IronCore{
                     self::waitRandomInterval($retry);
                     break;
                 default:
-                    curl_close($s);
                     $this->reportHttpError($status, $_out);
             }
         }
-        curl_close($s);
         $this->reportHttpError(503, "Service unavailable");
         return null;
     }
@@ -281,7 +288,9 @@ class IronCore{
             'User-Agent'      => $this->userAgent(),
             'Content-Type'    => 'application/json',
             'Accept'          => self::header_accept,
-            'Accept-Encoding' => self::header_accept_encoding
+            'Accept-Encoding' => self::header_accept_encoding,
+            'Connection'      => 'Keep-Alive',
+            'Keep-Alive'      => '300'
         );
     }
 
