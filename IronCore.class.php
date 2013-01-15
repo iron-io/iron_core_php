@@ -5,13 +5,13 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.1.0
+ * @version 0.1.1
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
 
 class IronCore{
-    protected $core_version = '0.1.0';
+    protected $core_version = '0.1.1';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -189,9 +189,9 @@ class IronCore{
         }
         switch ($type) {
             case self::DELETE:
-                $url .= '?' . http_build_query($params);
                 curl_setopt($this->curl, CURLOPT_URL, $url);
                 curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::DELETE);
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
                 break;
             case self::PUT:
                 curl_setopt($this->curl, CURLOPT_URL, $url);
