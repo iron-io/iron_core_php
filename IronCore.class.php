@@ -5,13 +5,13 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.1.1
+ * @version 0.1.2
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
 
 class IronCore{
-    protected $core_version = '0.1.1';
+    protected $core_version = '0.1.2';
 
     // should be overridden by child class
     protected $client_version = null;
