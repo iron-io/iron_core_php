@@ -11,7 +11,7 @@
  */
 
 class IronCore{
-    protected $core_version = '0.1.2';
+    protected $core_version = '0.1.3';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -121,8 +121,10 @@ class IronCore{
         $this->loadFromEnv(strtoupper($this->product_name));
         $this->loadFromEnv('IRON');
 
-        $this->loadConfigFile(self::homeDir() . '.iron.ini');
-        $this->loadConfigFile(self::homeDir() . '.iron.json');
+        if (!ini_get('open_basedir')){
+            $this->loadConfigFile(self::homeDir() . '.iron.ini');
+            $this->loadConfigFile(self::homeDir() . '.iron.json');
+        }
 
         $this->loadFromHash($this->default_values);
 
