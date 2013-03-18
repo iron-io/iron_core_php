@@ -5,12 +5,12 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.1.2
+ * @version 0.1.3
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
 
-class IronCore{
+class IronCore {
     protected $core_version = '0.1.3';
 
     // should be overridden by child class
@@ -301,7 +301,7 @@ class IronCore{
 /**
  * The Http_Exception class represents an HTTP response status that is not 200 OK.
  */
-class Http_Exception extends Exception{
+class Http_Exception extends Exception {
     const NOT_MODIFIED = 304;
     const BAD_REQUEST = 400;
     const NOT_FOUND = 404;
