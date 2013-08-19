@@ -11,6 +11,12 @@
             "email": "alexander@iron.io",
             "homepage": "http://iron.io",
             "role": "Developer"
+        },
+        {
+            "name": "Iron.io",
+            "email": "support@iron.io",
+            "homepage": "http://iron.io",
+            "role": "Developer"
         }
     ],
     "require": {

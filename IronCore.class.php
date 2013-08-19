@@ -5,13 +5,13 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.1.4
+ * @version 0.1.5
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
 
 class IronCore {
-    protected $core_version = '0.1.4';
+    protected $core_version = '0.1.5';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -40,6 +40,7 @@ class IronCore {
     protected $protocol;
     protected $host;
     protected $port;
+    protected $encryption_key;
     protected $curl = null;
 
     public  $max_retries = 5;
@@ -137,21 +138,23 @@ class IronCore {
 
     protected function loadFromHash($options){
         if (empty($options)) return;
-        $this->setVarIfValue('token',       $options);
-        $this->setVarIfValue('project_id',  $options);
-        $this->setVarIfValue('protocol',    $options);
-        $this->setVarIfValue('host',        $options);
-        $this->setVarIfValue('port',        $options);
-        $this->setVarIfValue('api_version', $options);
+        $this->setVarIfValue('token',          $options);
+        $this->setVarIfValue('project_id',     $options);
+        $this->setVarIfValue('protocol',       $options);
+        $this->setVarIfValue('host',           $options);
+        $this->setVarIfValue('port',           $options);
+        $this->setVarIfValue('api_version',    $options);
+        $this->setVarIfValue('encryption_key', $options);
     }
 
     protected function loadFromEnv($prefix){
-        $this->setVarIfValue('token',       getenv($prefix. "_TOKEN"));
-        $this->setVarIfValue('project_id',  getenv($prefix. "_PROJECT_ID"));
-        $this->setVarIfValue('protocol',    getenv($prefix. "_SCHEME"));
-        $this->setVarIfValue('host',        getenv($prefix. "_HOST"));
-        $this->setVarIfValue('port',        getenv($prefix. "_PORT"));
-        $this->setVarIfValue('api_version', getenv($prefix. "_API_VERSION"));
+        $this->setVarIfValue('token',          getenv($prefix. "_TOKEN"));
+        $this->setVarIfValue('project_id',     getenv($prefix. "_PROJECT_ID"));
+        $this->setVarIfValue('protocol',       getenv($prefix. "_SCHEME"));
+        $this->setVarIfValue('host',           getenv($prefix. "_HOST"));
+        $this->setVarIfValue('port',           getenv($prefix. "_PORT"));
+        $this->setVarIfValue('api_version',    getenv($prefix. "_API_VERSION"));
+        $this->setVarIfValue('encryption_key', getenv($prefix. "_ENCRYPTION_KEY"));
     }
 
     protected function setVarIfValue($key, $options_or_value){
