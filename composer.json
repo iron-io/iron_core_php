@@ -23,7 +23,7 @@
         "php": ">=5.2.0"
     },
     "autoload": {
-        "files": ["IronCore.class.php"]
+        "classmap": ["IronCore.class.php"]
     },
     "repositories":[
         {
