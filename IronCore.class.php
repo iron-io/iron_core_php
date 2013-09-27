@@ -47,6 +47,8 @@ class IronCore {
     public  $debug_enabled = false;
     public  $ssl_verifypeer = true;
     public  $connection_timeout = 60;
+    public  $proxy = null;
+    public  $proxy_userpwd = null;
 
     public function __destruct() {
         if ($this->curl != null){
@@ -223,6 +225,12 @@ class IronCore {
                 break;
         }
         $this->debug("API $type", $url);
+        if(!is_null($this->proxy )){
+            curl_setopt($this->curl, CURLOPT_PROXY, $this->proxy);
+            if(!is_null($this->proxy_userpwd)){
+                curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, $this->proxy_userpwd);
+            }
+        }
         curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
         curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledHeaders());
