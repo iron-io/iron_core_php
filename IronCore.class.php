@@ -51,7 +51,7 @@ class IronCore {
     public  $proxy_userpwd = null;
 
     public function __destruct() {
-        if ($this->curl != null){
+        if ($this->curl != null) {
             curl_close($this->curl);
             $this->curl = null;
         }
@@ -67,37 +67,37 @@ class IronCore {
         return gmdate('c', $timestamp);
     }
 
-    protected static function json_decode($response){
+    protected static function json_decode($response) {
         $data = json_decode($response);
-        if (function_exists('json_last_error')){
+        if (function_exists('json_last_error')) {
             $json_error = json_last_error();
-            if($json_error != JSON_ERROR_NONE) {
+            if ($json_error != JSON_ERROR_NONE) {
                 throw new JSON_Exception($json_error);
             }
-        }elseif($data === null){
+        } elseif ($data === null) {
             throw new JSON_Exception("Common JSON error");
         }
         return $data;
     }
 
 
-    protected static function homeDir(){
-        if ($home_dir = getenv('HOME')){
+    protected static function homeDir() {
+        if ($home_dir = getenv('HOME')) {
             // *NIX
             return $home_dir.DIRECTORY_SEPARATOR;
-        }else{
+        } else {
             // Windows
             return getenv('HOMEDRIVE').getenv('HOMEPATH').DIRECTORY_SEPARATOR;
         }
     }
 
-    protected function debug($var_name, $variable){
-        if ($this->debug_enabled){
+    protected function debug($var_name, $variable) {
+        if ($this->debug_enabled) {
             echo "{$var_name}: ".var_export($variable,true)."\n";
         }
     }
 
-    protected function userAgent(){
+    protected function userAgent() {
         return "{$this->client_name}-{$this->client_version} (iron_core-{$this->core_version})";
     }
 
@@ -109,13 +109,13 @@ class IronCore {
      * @return array
      * @throws InvalidArgumentException
      */
-    protected function getConfigData($config_file_or_options){
-        if(is_string($config_file_or_options)){
-            if (!file_exists($config_file_or_options)){
+    protected function getConfigData($config_file_or_options) {
+        if (is_string($config_file_or_options)) {
+            if (!file_exists($config_file_or_options)) {
                 throw new InvalidArgumentException("Config file $config_file_or_options not found");
             }
             $this->loadConfigFile($config_file_or_options);
-        }elseif(is_array($config_file_or_options)){
+        } elseif (is_array($config_file_or_options)) {
             $this->loadFromHash($config_file_or_options);
         }
 
@@ -125,20 +125,20 @@ class IronCore {
         $this->loadFromEnv(strtoupper($this->product_name));
         $this->loadFromEnv('IRON');
 
-        if (!ini_get('open_basedir')){
+        if (!ini_get('open_basedir')) {
             $this->loadConfigFile(self::homeDir() . '.iron.ini');
             $this->loadConfigFile(self::homeDir() . '.iron.json');
         }
 
         $this->loadFromHash($this->default_values);
 
-        if (empty($this->token) || empty($this->project_id)){
+        if (empty($this->token) || empty($this->project_id)) {
             throw new InvalidArgumentException("token or project_id not found in any of the available sources");
         }
     }
 
 
-    protected function loadFromHash($options){
+    protected function loadFromHash($options) {
         if (empty($options)) return;
         $this->setVarIfValue('token',          $options);
         $this->setVarIfValue('project_id',     $options);
@@ -149,7 +149,7 @@ class IronCore {
         $this->setVarIfValue('encryption_key', $options);
     }
 
-    protected function loadFromEnv($prefix){
+    protected function loadFromEnv($prefix) {
         $this->setVarIfValue('token',          getenv($prefix. "_TOKEN"));
         $this->setVarIfValue('project_id',     getenv($prefix. "_PROJECT_ID"));
         $this->setVarIfValue('protocol',       getenv($prefix. "_SCHEME"));
@@ -159,26 +159,26 @@ class IronCore {
         $this->setVarIfValue('encryption_key', getenv($prefix. "_ENCRYPTION_KEY"));
     }
 
-    protected function setVarIfValue($key, $options_or_value){
+    protected function setVarIfValue($key, $options_or_value) {
         if (!empty($this->$key)) return;
-        if (is_array($options_or_value)){
-            if (!empty($options_or_value[$key])){
+        if (is_array($options_or_value)) {
+            if (!empty($options_or_value[$key])) {
                 $this->$key = $options_or_value[$key];
             }
-        }else{
-            if (!empty($options_or_value)){
+        } else {
+            if (!empty($options_or_value)) {
                 $this->$key = $options_or_value;
             }
         }
     }
 
-    protected function loadConfigFile($file){
+    protected function loadConfigFile($file) {
         if (!file_exists($file)) return;
         $data = @parse_ini_file($file, true);
-        if ($data === false){
+        if ($data === false) {
             $data = json_decode(file_get_contents($file), true);
         }
-        if (!is_array($data)){
+        if (!is_array($data)) {
             throw new InvalidArgumentException("Config file $file not parsed");
         };
 
@@ -187,12 +187,12 @@ class IronCore {
         $this->loadFromHash($data);
     }
 
-    protected function apiCall($type, $url, $params = array(), $raw_post_data = null){
+    protected function apiCall($type, $url, $params = array(), $raw_post_data = null) {
         $url = "{$this->url}$url";
 
         if ($this->curl == null) $this->curl = curl_init();
 
-        if (! isset($params['oauth'])) {
+        if (!isset($params['oauth'])) {
           $params['oauth'] = $this->token;
         }
         switch ($type) {
@@ -210,9 +210,9 @@ class IronCore {
                 curl_setopt($this->curl, CURLOPT_URL,  $url);
                 curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
                 curl_setopt($this->curl, CURLOPT_POST, true);
-                if ($raw_post_data){
+                if ($raw_post_data) {
                     curl_setopt($this->curl, CURLOPT_POSTFIELDS, $raw_post_data);
-                }else{
+                } else {
                     curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
                 }
                 break;
@@ -225,9 +225,9 @@ class IronCore {
                 break;
         }
         $this->debug("API $type", $url);
-        if(!is_null($this->proxy )){
+        if (!is_null($this->proxy )) {
             curl_setopt($this->curl, CURLOPT_PROXY, $this->proxy);
-            if(!is_null($this->proxy_userpwd)){
+            if (!is_null($this->proxy_userpwd)) {
                 curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, $this->proxy_userpwd);
             }
         }
@@ -238,10 +238,10 @@ class IronCore {
         return $this->callWithRetries();
     }
 
-    protected function callWithRetries(){
-        for ($retry = 0; $retry < $this->max_retries; $retry++){
+    protected function callWithRetries() {
+        for ($retry = 0; $retry < $this->max_retries; $retry++) {
             $_out = curl_exec($this->curl);
-            if($_out === false) {
+            if ($_out === false) {
                 $this->reportHttpError(0, curl_error($this->curl));
             }
             $status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
@@ -251,9 +251,9 @@ class IronCore {
                 case self::HTTP_ACCEPTED:
                     return $_out;
                 case Http_Exception::INTERNAL_ERROR:
-                    if (strpos($_out, "EOF") !== false){
+                    if (strpos($_out, "EOF") !== false) {
                         self::waitRandomInterval($retry);
-                    }else{
+                    } else {
                         $this->reportHttpError($status, $_out);
                     }
                     break;
@@ -268,7 +268,7 @@ class IronCore {
         return null;
     }
 
-    protected function reportHttpError($status, $text){
+    protected function reportHttpError($status, $text) {
         throw new Http_Exception("http error: {$status} | {$text}", $status);
     }
 
@@ -278,25 +278,25 @@ class IronCore {
      * @static
      * @param int $retry currentRetry number
      */
-    protected static function waitRandomInterval($retry){
+    protected static function waitRandomInterval($retry) {
         $max_delay = pow(4, $retry)*100*1000;
         usleep(rand(0, $max_delay));
     }
 
-    protected function compiledHeaders(){
+    protected function compiledHeaders() {
         # Set default headers if no headers set.
-        if ($this->headers == null){
+        if ($this->headers == null) {
             $this->setCommonHeaders();
         }
 
         $headers = array();
-        foreach ($this->headers as $k => $v){
+        foreach ($this->headers as $k => $v) {
             $headers[] = "$k: $v";
         }
         return $headers;
     }
 
-    protected function setCommonHeaders(){
+    protected function setCommonHeaders() {
         $this->headers = array(
             'Authorization'   => "OAuth {$this->token}",
             'User-Agent'      => $this->userAgent(),
@@ -307,7 +307,6 @@ class IronCore {
             'Keep-Alive'      => '300'
         );
     }
-
 }
 
 /**
@@ -355,4 +354,3 @@ class JSON_Exception extends Exception {
         return $this->error;
     }
 }
-
