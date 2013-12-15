@@ -199,8 +199,12 @@ class IronCore
             throw new InvalidArgumentException("Config file $file not parsed");
         };
 
-        if (!empty($data[$this->product_name])) $this->loadFromHash($data[$this->product_name]);
-        if (!empty($data['iron'])) $this->loadFromHash($data['iron']);
+        if (!empty($data[$this->product_name])) {
+            $this->loadFromHash($data[$this->product_name]);
+        }
+        if (!empty($data['iron'])) {
+            $this->loadFromHash($data['iron']);
+        }
         $this->loadFromHash($data);
     }
 
