@@ -43,6 +43,7 @@ class IronCore
     protected $port;
     protected $encryption_key;
     protected $curl = null;
+    protected $last_status;
 
     public $max_retries = 5;
     public $debug_enabled = false;
@@ -57,6 +58,11 @@ class IronCore
             curl_close($this->curl);
             $this->curl = null;
         }
+    }
+
+    public function getLastStatus()
+    {
+        return $this->last_status;
     }
 
     protected static function dateRfc3339($timestamp = 0)
@@ -268,8 +274,8 @@ class IronCore
             if ($_out === false) {
                 $this->reportHttpError(0, curl_error($this->curl));
             }
-            $status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
-            switch ($status) {
+            $this->last_status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+            switch ($this->last_status) {
                 case self::HTTP_OK:
                 case self::HTTP_CREATED:
                 case self::HTTP_ACCEPTED:
@@ -278,14 +284,14 @@ class IronCore
                     if (strpos($_out, "EOF") !== false) {
                         self::waitRandomInterval($retry);
                     } else {
-                        $this->reportHttpError($status, $_out);
+                        $this->reportHttpError($this->last_status, $_out);
                     }
                     break;
                 case Http_Exception::SERVICE_UNAVAILABLE:
                     self::waitRandomInterval($retry);
                     break;
                 default:
-                    $this->reportHttpError($status, $_out);
+                    $this->reportHttpError($this->last_status, $_out);
             }
         }
         $this->reportHttpError(503, "Service unavailable");
