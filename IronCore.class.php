@@ -272,7 +272,7 @@ class IronCore
             curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
         }
         else {
-            $this->debug("Call with URL Fetch");
+            $this->debug("Call with URL Fetch", $url);
             if ($type == self::GET) {
                 $url .= '?' . http_build_query($params);
                 $this->urlFetchUrl = $url;
@@ -316,6 +316,7 @@ class IronCore
                     $this->last_status = $responseHeader[1];
                 } catch(Exception $e) {
                     $this->reportHttpError(0, $e->getMessage());
+                    return null;
                 }
             }
             switch ($this->last_status) {
