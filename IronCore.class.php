@@ -276,23 +276,23 @@ class IronCore
             if ($type == self::GET) {
                 $url .= '?' . http_build_query($params);
                 $this->urlFetchUrl = $url;
-                $this->context = stream_context_create([
-                      'https' => [
-                        'method' => $type,
-                        'content' => json_encode($params),
-                        'verify_peer' => $this->ssl_verifypeer,
-                        'header' => $this->compiledHeaders()
-                      ]
+                $this->urlFetchContext = stream_context_create([
+                        'https' => [
+                            'method' => $type,
+                            'content' => json_encode($params),
+                            'verify_peer' => $this->ssl_verifypeer,
+                            'header' => $this->compiledHeaders()
+                        ]
                     ]);
             }
             else {
                 $this->urlFetchUrl = $url;
-                $this->context = stream_context_create([
-                      'https' => [
-                        'method' => $type,
-                        'verify_peer' => $this->ssl_verifypeer,
-                        'header' => $this->compiledHeaders()
-                      ]
+                $this->urlFetchContext = stream_context_create([
+                        'https' => [
+                            'method' => $type,
+                            'verify_peer' => $this->ssl_verifypeer,
+                            'header' => $this->compiledHeaders()
+                        ]
                     ]);
             }
         }
@@ -311,7 +311,10 @@ class IronCore
             }
             else {
                 try {
-                    $_out = file_get_contents($this->urlFetchUrl, false, $$this->urlFetchContext);
+                    $_out = file_get_contents($this->urlFetchUrl, false, $this->urlFetchContext);
+                    if ($_out === false) {
+                        $this->reportHttpError(0, curl_error($this->curl));
+                    }
                     $responseHeader = explode(' ', $http_response_header[0]);
                     $this->last_status = $responseHeader[1];
                 } catch(Exception $e) {
