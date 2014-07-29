@@ -45,7 +45,7 @@ class IronCore
     protected $curl = null;
     protected $last_status;
 
-    protected $urlFetchContect;
+    protected $urlFetchContext;
     protected $urlFetchData;
     protected $urlFetchUrl;
 
@@ -268,7 +268,7 @@ class IronCore
             }
             curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
             curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledHeaders());
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledCurlHeaders());
             curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
         }
         else {
@@ -276,24 +276,24 @@ class IronCore
             if ($type == self::GET) {
                 $url .= '?' . http_build_query($params);
                 $this->urlFetchUrl = $url;
-                $this->urlFetchContext = stream_context_create([
-                        'https' => [
-                            'method' => $type,
-                            'content' => json_encode($params),
-                            'verify_peer' => $this->ssl_verifypeer,
-                            'header' => $this->compiledHeaders()
-                        ]
-                    ]);
+                $this->urlFetchContext = stream_context_create(array(
+                    'http' => array(
+                        'method' => $type,
+                        'verify_peer' => $this->ssl_verifypeer,
+                        'header' => $this->compiledUrlFetchHeaders()
+                    )
+                ));
             }
             else {
                 $this->urlFetchUrl = $url;
-                $this->urlFetchContext = stream_context_create([
-                        'https' => [
-                            'method' => $type,
-                            'verify_peer' => $this->ssl_verifypeer,
-                            'header' => $this->compiledHeaders()
-                        ]
-                    ]);
+                $this->urlFetchContext = stream_context_create(array(
+                    'http' => array(
+                        'method' => $type,
+                        'verify_peer' => $this->ssl_verifypeer,
+                        'header' => $this->compiledUrlFetchHeaders(),
+                        'content' => json_encode($params)
+                    )
+                ));
             }
         }
         return $this->callWithRetries();
@@ -312,9 +312,6 @@ class IronCore
             else {
                 try {
                     $_out = file_get_contents($this->urlFetchUrl, false, $this->urlFetchContext);
-                    if ($_out === false) {
-                        $this->reportHttpError(0, curl_error($this->curl));
-                    }
                     $responseHeader = explode(' ', $http_response_header[0]);
                     $this->last_status = $responseHeader[1];
                 } catch(Exception $e) {
@@ -367,7 +364,7 @@ class IronCore
         usleep(rand(0, $max_delay));
     }
 
-    protected function compiledHeaders()
+    protected function compiledCurlHeaders()
     {
         # Set default headers if no headers set.
         if ($this->headers == null) {
@@ -377,6 +374,23 @@ class IronCore
         $headers = array();
         foreach ($this->headers as $k => $v) {
             $headers[] = "$k: $v";
+        }
+        return $headers;
+    }
+
+    protected function compiledUrlFetchHeaders()
+    {
+        # Set default headers if no headers set.
+        if ($this->headers == null) {
+            $this->setCommonHeaders();
+        }
+
+        $headers = "";
+        foreach ($this->headers as $k => $v) {
+            if ($k == 'Connection') {
+                $v = 'Close';
+            }
+            $headers .= "$k: $v\r\n";
         }
         return $headers;
     }
