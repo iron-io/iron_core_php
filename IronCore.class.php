@@ -45,6 +45,10 @@ class IronCore
     protected $curl = null;
     protected $last_status;
 
+    protected $urlFetchContext;
+    protected $urlFetchData;
+    protected $urlFetchUrl;
+
     public $max_retries = 5;
     public $debug_enabled = false;
     public $ssl_verifypeer = true;
@@ -203,7 +207,7 @@ class IronCore
         }
         if (!is_array($data)) {
             throw new InvalidArgumentException("Config file $file not parsed");
-        };
+        }
 
         if (!empty($data[$this->product_name])) {
             $this->loadFromHash($data[$this->product_name]);
@@ -217,64 +221,104 @@ class IronCore
     protected function apiCall($type, $url, $params = array(), $data = null)
     {
         $url = "{$this->url}$url";
+        $this->debug("API $type", $url);
 
-        if ($this->curl == null) {
+        if ($this->curl == null && $this->curlEnabled()) {
             $this->curl = curl_init();
         }
         if (!isset($params['oauth'])) {
             $params['oauth'] = $this->token;
         }
-        switch ($type) {
-            case self::DELETE:
-                curl_setopt($this->curl, CURLOPT_URL, $url);
-                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::DELETE);
-                curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
-                break;
-            case self::PUT:
-                curl_setopt($this->curl, CURLOPT_URL, $url);
-                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::PUT);
-                curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
-                break;
-            case self::POST:
-                curl_setopt($this->curl, CURLOPT_URL, $url);
-                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
-                curl_setopt($this->curl, CURLOPT_POST, true);
-                if ($data) {
-                    curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
-                } else {
+        if ($this->curlEnabled()) {
+            switch ($type) {
+                case self::DELETE:
+                    curl_setopt($this->curl, CURLOPT_URL, $url);
+                    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::DELETE);
                     curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
+                    break;
+                case self::PUT:
+                    curl_setopt($this->curl, CURLOPT_URL, $url);
+                    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::PUT);
+                    curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
+                    break;
+                case self::POST:
+                    curl_setopt($this->curl, CURLOPT_URL, $url);
+                    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
+                    curl_setopt($this->curl, CURLOPT_POST, true);
+                    if ($data) {
+                        curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
+                    } else {
+                        curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
+                    }
+                    break;
+                case self::GET:
+                    curl_setopt($this->curl, CURLOPT_POSTFIELDS, null);
+                    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::GET);
+                    curl_setopt($this->curl, CURLOPT_HTTPGET, true);
+                    $url .= '?' . http_build_query($params);
+                    curl_setopt($this->curl, CURLOPT_URL, $url);
+                    break;
+            }
+
+            if (!is_null($this->proxy)) {
+                curl_setopt($this->curl, CURLOPT_PROXY, $this->proxy);
+                if (!is_null($this->proxy_userpwd)) {
+                    curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, $this->proxy_userpwd);
                 }
-                break;
-            case self::GET:
-                curl_setopt($this->curl, CURLOPT_POSTFIELDS, null);
-                curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::GET);
-                curl_setopt($this->curl, CURLOPT_HTTPGET, true);
-                $url .= '?' . http_build_query($params);
-                curl_setopt($this->curl, CURLOPT_URL, $url);
-                break;
+            }
+            curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
+            curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledCurlHeaders());
+            curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
         }
-        $this->debug("API $type", $url);
-        if (!is_null($this->proxy)) {
-            curl_setopt($this->curl, CURLOPT_PROXY, $this->proxy);
-            if (!is_null($this->proxy_userpwd)) {
-                curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, $this->proxy_userpwd);
+        else {
+            $this->debug("Call with URL Fetch", $url);
+            if ($type == self::GET) {
+                $url .= '?' . http_build_query($params);
+                $this->urlFetchUrl = $url;
+                $this->urlFetchContext = stream_context_create(array(
+                    'http' => array(
+                        'method' => $type,
+                        'verify_peer' => $this->ssl_verifypeer,
+                        'header' => $this->compiledUrlFetchHeaders()
+                    )
+                ));
+            }
+            else {
+                $this->urlFetchUrl = $url;
+                $this->urlFetchContext = stream_context_create(array(
+                    'http' => array(
+                        'method' => $type,
+                        'verify_peer' => $this->ssl_verifypeer,
+                        'header' => $this->compiledUrlFetchHeaders(),
+                        'content' => json_encode($params)
+                    )
+                ));
             }
         }
-        curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
-        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledHeaders());
-        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
         return $this->callWithRetries();
     }
 
     protected function callWithRetries()
     {
         for ($retry = 0; $retry < $this->max_retries; $retry++) {
-            $_out = curl_exec($this->curl);
-            if ($_out === false) {
-                $this->reportHttpError(0, curl_error($this->curl));
+            if ($this->curlEnabled()) {
+                $_out = curl_exec($this->curl);
+                if ($_out === false) {
+                    $this->reportHttpError(0, curl_error($this->curl));
+                }
+                $this->last_status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
             }
-            $this->last_status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+            else {
+                try {
+                    $_out = file_get_contents($this->urlFetchUrl, false, $this->urlFetchContext);
+                    $responseHeader = explode(' ', $http_response_header[0]);
+                    $this->last_status = $responseHeader[1];
+                } catch(Exception $e) {
+                    $this->reportHttpError(0, $e->getMessage());
+                    return null;
+                }
+            }
             switch ($this->last_status) {
                 case self::HTTP_OK:
                 case self::HTTP_CREATED:
@@ -303,6 +347,11 @@ class IronCore
         throw new Http_Exception("http error: {$status} | {$text}", $status);
     }
 
+    protected function curlEnabled()
+    {
+        return function_exists('curl_version');
+    }
+
     /**
      * Wait for a random time between 0 and (4^currentRetry * 100) milliseconds
      *
@@ -315,7 +364,7 @@ class IronCore
         usleep(rand(0, $max_delay));
     }
 
-    protected function compiledHeaders()
+    protected function compiledCurlHeaders()
     {
         # Set default headers if no headers set.
         if ($this->headers == null) {
@@ -325,6 +374,23 @@ class IronCore
         $headers = array();
         foreach ($this->headers as $k => $v) {
             $headers[] = "$k: $v";
+        }
+        return $headers;
+    }
+
+    protected function compiledUrlFetchHeaders()
+    {
+        # Set default headers if no headers set.
+        if ($this->headers == null) {
+            $this->setCommonHeaders();
+        }
+
+        $headers = "";
+        foreach ($this->headers as $k => $v) {
+            if ($k == 'Connection') {
+                $v = 'Close';
+            }
+            $headers .= "$k: $v\r\n";
         }
         return $headers;
     }
