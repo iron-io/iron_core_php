@@ -276,7 +276,7 @@ class IronCore
             if ($type == self::GET) {
                 $url .= '?' . http_build_query($params);
                 $this->urlFetchUrl = $url;
-                $this->context = stream_context_create[
+                $this->context = stream_context_create([
                       'https' => [
                         'method' => $type,
                         'content' => json_encode($params),
