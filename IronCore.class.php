@@ -287,7 +287,7 @@ class IronCore
             }
             else {
                 $this->urlFetchUrl = $url;
-                $this->context = stream_context_create[
+                $this->context = stream_context_create([
                       'https' => [
                         'method' => $type,
                         'verify_peer' => $this->ssl_verifypeer,
