@@ -308,8 +308,7 @@ class IronCore
                     $this->reportHttpError(0, curl_error($this->curl));
                 }
                 $this->last_status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
-            }
-            else {
+            } else {
                 try {
                     $_out = file_get_contents($this->urlFetchUrl, false, $this->urlFetchContext);
                     $responseHeader = explode(' ', $http_response_header[0]);
@@ -362,6 +361,15 @@ class IronCore
     {
         $max_delay = pow(4, $retry)*100*1000;
         usleep(rand(0, $max_delay));
+    }
+
+    protected function compiledHeaders()
+    {
+        if ($this->curlEnabled()) {
+            return $this->compiledCurlHeaders();
+        } else {
+            return $this->compiledUrlFetchHeaders();
+        }
     }
 
     protected function compiledCurlHeaders()
