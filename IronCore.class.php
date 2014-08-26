@@ -28,6 +28,7 @@ class IronCore
     const PUT    = 'PUT';
     const GET    = 'GET';
     const DELETE = 'DELETE';
+    const PATCH  = 'PATCH';
 
     const HEADER_ACCEPT = "application/json";
     const HEADER_ACCEPT_ENCODING = "gzip, deflate";
@@ -239,6 +240,11 @@ class IronCore
                 case self::PUT:
                     curl_setopt($this->curl, CURLOPT_URL, $url);
                     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::PUT);
+                    curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
+                    break;
+                case self::PATCH:
+                    curl_setopt($this->curl, CURLOPT_URL, $url);
+                    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::PATCH);
                     curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
                     break;
                 case self::POST:
