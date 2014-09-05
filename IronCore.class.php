@@ -46,10 +46,6 @@ class IronCore
     protected $curl = null;
     protected $last_status;
 
-    protected $server;
-    protected $tenant;
-    protected $username;
-    protected $password;
     protected $keystone;
     protected $use_keystone;
     protected $keystone_token;
