@@ -337,13 +337,14 @@ class IronCore
                     }
                     break;
                 case Http_Exception::SERVICE_UNAVAILABLE:
+                case Http_Exception::GATEWAY_TIMEOUT:
                     self::waitRandomInterval($retry);
                     break;
                 default:
                     $this->reportHttpError($this->last_status, $_out);
             }
         }
-        $this->reportHttpError(503, "Service unavailable");
+        $this->reportHttpError($this->last_status, "Service unavailable");
         return null;
     }
 
@@ -436,6 +437,7 @@ class Http_Exception extends Exception
     const PRECONDITION_FAILED = 412;
     const INTERNAL_ERROR = 500;
     const SERVICE_UNAVAILABLE = 503;
+    const GATEWAY_TIMEOUT = 504;
 }
 
 /**
