@@ -46,6 +46,11 @@ class IronCore
     protected $curl = null;
     protected $last_status;
 
+    protected $keystone;
+    protected $use_keystone;
+    protected $keystone_token;
+    protected $keystone_token_expires;
+
     protected $urlFetchContext;
     protected $urlFetchData;
     protected $urlFetchUrl;
@@ -150,8 +155,15 @@ class IronCore
 
         $this->loadFromHash($this->default_values);
 
-        if (empty($this->token) || empty($this->project_id)) {
+        if (empty($this->project_id)) {
             throw new InvalidArgumentException("token or project_id not found in any of the available sources");
+        }
+
+        if (!empty($this->keystone)){
+            $required_keys = array('username', 'password', 'tenant', 'server');
+            if (count(array_intersect_key(array_flip($required_keys), $this->keystone)) === count($required_keys)) {
+                $this->use_keystone = True;
+            }
         }
     }
 
@@ -168,6 +180,7 @@ class IronCore
         $this->setVarIfValue('port', $options);
         $this->setVarIfValue('api_version', $options);
         $this->setVarIfValue('encryption_key', $options);
+        $this->setVarIfValue('keystone', $options);
     }
 
     protected function loadFromEnv($prefix)
@@ -219,16 +232,12 @@ class IronCore
         $this->loadFromHash($data);
     }
 
-    protected function apiCall($type, $url, $params = array(), $data = null)
+    protected function request($type, $url, $params = array(), $data = null)
     {
-        $url = "{$this->url}$url";
         $this->debug("API $type", $url);
 
         if ($this->curl == null && $this->curlEnabled()) {
             $this->curl = curl_init();
-        }
-        if (!isset($params['oauth'])) {
-            $params['oauth'] = $this->token;
         }
         if ($this->curlEnabled()) {
             switch ($type) {
@@ -303,6 +312,15 @@ class IronCore
             }
         }
         return $this->callWithRetries();
+    }
+
+    protected function apiCall($type, $url, $params = array(), $data = null)
+    {
+        $url = "{$this->url}$url";
+        if (!isset($params['oauth'])) {
+            $params['oauth'] = $this->token;
+        }
+        return $this -> request($type, $url, $params, $data);
     }
 
     protected function callWithRetries()
@@ -421,6 +439,32 @@ class IronCore
             'Connection'      => 'Keep-Alive',
             'Keep-Alive'      => '300'
         );
+    }
+
+    protected function getToken()
+    {
+        $current_time = new DateTime("now", new DateTimeZone('UTC'));
+        if (is_null($this->keystone_token) || $current_time > $this->keystone_token_expires) {
+
+            $req = array(
+                'auth' => array(
+                    'tenantName' => $this->keystone['tenant'],
+                    'passwordCredentials' => array(
+                        'username' => $this->keystone['username'],
+                        'password' => $this->keystone['password']
+                    )
+                )
+            );
+            $this -> setCommonHeaders();
+            $url = $this->keystone['server'].'tokens';
+            $response = json_decode($this->request(self::POST, $url, $req), true);
+            $token = $response['access']['token'];
+            $timespan = abs(strtotime($token['expires']) - strtotime($token['issued_at']));
+            $this->keystone_token_expires = $current_time->add(new DateInterval('PT'.$timespan.'S'));
+            $this->keystone_token = $token['id'];
+        }
+
+        return $this->keystone_token;
     }
 }
 
