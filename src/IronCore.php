@@ -1,4 +1,7 @@
 <?php
+
+namespace IronCore;
+
 /**
  * Core functionality for Iron.io products
  *
@@ -9,26 +12,25 @@
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
-
 class IronCore
 {
     protected $core_version = '0.2.1';
 
     // should be overridden by child class
     protected $client_version = null;
-    protected $client_name    = null;
-    protected $product_name   = null;
+    protected $client_name = null;
+    protected $product_name = null;
     protected $default_values = null;
 
     const HTTP_OK = 200;
     const HTTP_CREATED = 201;
     const HTTP_ACCEPTED = 202;
 
-    const POST   = 'POST';
-    const PUT    = 'PUT';
-    const GET    = 'GET';
+    const POST = 'POST';
+    const PUT = 'PUT';
+    const GET = 'GET';
     const DELETE = 'DELETE';
-    const PATCH  = 'PATCH';
+    const PATCH = 'PATCH';
 
     const HEADER_ACCEPT = "application/json";
     const HEADER_ACCEPT_ENCODING = "gzip, deflate";
@@ -59,7 +61,8 @@ class IronCore
 
     public function __destruct()
     {
-        if ($this->curl != null) {
+        if ($this->curl != null)
+        {
             curl_close($this->curl);
             $this->curl = null;
         }
@@ -72,44 +75,56 @@ class IronCore
 
     protected static function dateRfc3339($timestamp = 0)
     {
-        if ($timestamp instanceof DateTime) {
+        if ($timestamp instanceof \DateTime)
+        {
             $timestamp = $timestamp->getTimestamp();
         }
-        if (!$timestamp) {
+        if (!$timestamp)
+        {
             $timestamp = time();
         }
+
         return gmdate('c', $timestamp);
     }
 
     protected static function json_decode($response)
     {
         $data = json_decode($response);
-        if (function_exists('json_last_error')) {
+        if (function_exists('json_last_error'))
+        {
             $json_error = json_last_error();
-            if ($json_error != JSON_ERROR_NONE) {
-                throw new JSON_Exception($json_error);
+            if ($json_error != JSON_ERROR_NONE)
+            {
+                throw new JSONException($json_error);
             }
-        } elseif ($data === null) {
-            throw new JSON_Exception("Common JSON error");
         }
+        elseif ($data === null)
+        {
+            throw new JSONException("Common JSON error");
+        }
+
         return $data;
     }
 
     protected static function homeDir()
     {
-        if ($home_dir = getenv('HOME')) {
+        if ($home_dir = getenv('HOME'))
+        {
             // *NIX
-            return $home_dir.DIRECTORY_SEPARATOR;
-        } else {
+            return $home_dir . DIRECTORY_SEPARATOR;
+        }
+        else
+        {
             // Windows
-            return getenv('HOMEDRIVE').getenv('HOMEPATH').DIRECTORY_SEPARATOR;
+            return getenv('HOMEDRIVE') . getenv('HOMEPATH') . DIRECTORY_SEPARATOR;
         }
     }
 
     protected function debug($var_name, $variable)
     {
-        if ($this->debug_enabled) {
-            echo "{$var_name}: ".var_export($variable, true)."\n";
+        if ($this->debug_enabled)
+        {
+            echo "{$var_name}: " . var_export($variable, true) . "\n";
         }
     }
 
@@ -123,17 +138,22 @@ class IronCore
      *
      * @param array|string|null $config
      * array of options or name of config file
+     *
      * @return array
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
     protected function getConfigData($config)
     {
-        if (is_string($config)) {
-            if (!file_exists($config)) {
-                throw new InvalidArgumentException("Config file $config not found");
+        if (is_string($config))
+        {
+            if (!file_exists($config))
+            {
+                throw new \InvalidArgumentException("Config file $config not found");
             }
             $this->loadConfigFile($config);
-        } elseif (is_array($config)) {
+        }
+        elseif (is_array($config))
+        {
             $this->loadFromHash($config);
         }
 
@@ -143,22 +163,25 @@ class IronCore
         $this->loadFromEnv(strtoupper($this->product_name));
         $this->loadFromEnv('IRON');
 
-        if (!ini_get('open_basedir')) {
+        if (!ini_get('open_basedir'))
+        {
             $this->loadConfigFile(self::homeDir() . '.iron.ini');
             $this->loadConfigFile(self::homeDir() . '.iron.json');
         }
 
         $this->loadFromHash($this->default_values);
 
-        if (empty($this->token) || empty($this->project_id)) {
-            throw new InvalidArgumentException("token or project_id not found in any of the available sources");
+        if (empty($this->token) || empty($this->project_id))
+        {
+            throw new \InvalidArgumentException("token or project_id not found in any of the available sources");
         }
     }
 
 
     protected function loadFromHash($options)
     {
-        if (empty($options)) {
+        if (empty($options))
+        {
             return;
         }
         $this->setVarIfValue('token', $options);
@@ -172,26 +195,32 @@ class IronCore
 
     protected function loadFromEnv($prefix)
     {
-        $this->setVarIfValue('token', getenv($prefix. "_TOKEN"));
-        $this->setVarIfValue('project_id', getenv($prefix. "_PROJECT_ID"));
-        $this->setVarIfValue('protocol', getenv($prefix. "_SCHEME"));
-        $this->setVarIfValue('host', getenv($prefix. "_HOST"));
-        $this->setVarIfValue('port', getenv($prefix. "_PORT"));
-        $this->setVarIfValue('api_version', getenv($prefix. "_API_VERSION"));
-        $this->setVarIfValue('encryption_key', getenv($prefix. "_ENCRYPTION_KEY"));
+        $this->setVarIfValue('token', getenv($prefix . "_TOKEN"));
+        $this->setVarIfValue('project_id', getenv($prefix . "_PROJECT_ID"));
+        $this->setVarIfValue('protocol', getenv($prefix . "_SCHEME"));
+        $this->setVarIfValue('host', getenv($prefix . "_HOST"));
+        $this->setVarIfValue('port', getenv($prefix . "_PORT"));
+        $this->setVarIfValue('api_version', getenv($prefix . "_API_VERSION"));
+        $this->setVarIfValue('encryption_key', getenv($prefix . "_ENCRYPTION_KEY"));
     }
 
     protected function setVarIfValue($key, $options_or_value)
     {
-        if (!empty($this->$key)) {
+        if (!empty($this->$key))
+        {
             return;
         }
-        if (is_array($options_or_value)) {
-            if (!empty($options_or_value[$key])) {
+        if (is_array($options_or_value))
+        {
+            if (!empty($options_or_value[$key]))
+            {
                 $this->$key = $options_or_value[$key];
             }
-        } else {
-            if (!empty($options_or_value)) {
+        }
+        else
+        {
+            if (!empty($options_or_value))
+            {
                 $this->$key = $options_or_value;
             }
         }
@@ -199,21 +228,26 @@ class IronCore
 
     protected function loadConfigFile($file)
     {
-        if (!file_exists($file)) {
+        if (!file_exists($file))
+        {
             return;
         }
         $data = @parse_ini_file($file, true);
-        if ($data === false) {
+        if ($data === false)
+        {
             $data = json_decode(file_get_contents($file), true);
         }
-        if (!is_array($data)) {
-            throw new InvalidArgumentException("Config file $file not parsed");
+        if (!is_array($data))
+        {
+            throw new \InvalidArgumentException("Config file $file not parsed");
         }
 
-        if (!empty($data[$this->product_name])) {
+        if (!empty($data[$this->product_name]))
+        {
             $this->loadFromHash($data[$this->product_name]);
         }
-        if (!empty($data['iron'])) {
+        if (!empty($data['iron']))
+        {
             $this->loadFromHash($data['iron']);
         }
         $this->loadFromHash($data);
@@ -224,14 +258,18 @@ class IronCore
         $url = "{$this->url}$url";
         $this->debug("API $type", $url);
 
-        if ($this->curl == null && $this->curlEnabled()) {
+        if ($this->curl == null && $this->curlEnabled())
+        {
             $this->curl = curl_init();
         }
-        if (!isset($params['oauth'])) {
+        if (!isset($params['oauth']))
+        {
             $params['oauth'] = $this->token;
         }
-        if ($this->curlEnabled()) {
-            switch ($type) {
+        if ($this->curlEnabled())
+        {
+            switch ($type)
+            {
                 case self::DELETE:
                     curl_setopt($this->curl, CURLOPT_URL, $url);
                     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::DELETE);
@@ -251,9 +289,12 @@ class IronCore
                     curl_setopt($this->curl, CURLOPT_URL, $url);
                     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
                     curl_setopt($this->curl, CURLOPT_POST, true);
-                    if ($data) {
+                    if ($data)
+                    {
                         curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
-                    } else {
+                    }
+                    else
+                    {
                         curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
                     }
                     break;
@@ -266,9 +307,11 @@ class IronCore
                     break;
             }
 
-            if (!is_null($this->proxy)) {
+            if (!is_null($this->proxy))
+            {
                 curl_setopt($this->curl, CURLOPT_PROXY, $this->proxy);
-                if (!is_null($this->proxy_userpwd)) {
+                if (!is_null($this->proxy_userpwd))
+                {
                     curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, $this->proxy_userpwd);
                 }
             }
@@ -277,67 +320,84 @@ class IronCore
             curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledCurlHeaders());
             curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
         }
-        else {
+        else
+        {
             $this->debug("Call with URL Fetch", $url);
-            if ($type == self::GET) {
+            if ($type == self::GET)
+            {
                 $url .= '?' . http_build_query($params);
                 $this->urlFetchUrl = $url;
                 $this->urlFetchContext = stream_context_create(array(
                     'http' => array(
-                        'method' => $type,
+                        'method'      => $type,
                         'verify_peer' => $this->ssl_verifypeer,
-                        'header' => $this->compiledUrlFetchHeaders()
+                        'header'      => $this->compiledUrlFetchHeaders()
                     )
                 ));
             }
-            else {
+            else
+            {
                 $this->urlFetchUrl = $url;
                 $this->urlFetchContext = stream_context_create(array(
                     'http' => array(
-                        'method' => $type,
+                        'method'      => $type,
                         'verify_peer' => $this->ssl_verifypeer,
-                        'header' => $this->compiledUrlFetchHeaders(),
-                        'content' => json_encode($params)
+                        'header'      => $this->compiledUrlFetchHeaders(),
+                        'content'     => json_encode($params)
                     )
                 ));
             }
         }
+
         return $this->callWithRetries();
     }
 
     protected function callWithRetries()
     {
-        for ($retry = 0; $retry < $this->max_retries; $retry++) {
-            if ($this->curlEnabled()) {
+        for ($retry = 0; $retry < $this->max_retries; $retry++)
+        {
+            if ($this->curlEnabled())
+            {
                 $_out = curl_exec($this->curl);
-                if ($_out === false) {
+                if ($_out === false)
+                {
                     $this->reportHttpError(0, curl_error($this->curl));
                 }
                 $this->last_status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
-            } else {
-                try {
+            }
+            else
+            {
+                try
+                {
                     $_out = file_get_contents($this->urlFetchUrl, false, $this->urlFetchContext);
                     $responseHeader = explode(' ', $http_response_header[0]);
                     $this->last_status = $responseHeader[1];
-                } catch(Exception $e) {
+                }
+                catch (\Exception $e)
+                {
                     $this->reportHttpError(0, $e->getMessage());
+
                     return null;
                 }
             }
-            switch ($this->last_status) {
+            switch ($this->last_status)
+            {
                 case self::HTTP_OK:
                 case self::HTTP_CREATED:
                 case self::HTTP_ACCEPTED:
                     return $_out;
-                case Http_Exception::INTERNAL_ERROR:
-                    if (strpos($_out, "EOF") !== false) {
+                case HttpException::INTERNAL_ERROR:
+                    if (strpos($_out, "EOF") !== false)
+                    {
                         self::waitRandomInterval($retry);
-                    } else {
+                    }
+                    else
+                    {
                         $this->reportHttpError($this->last_status, $_out);
                     }
                     break;
-                case Http_Exception::SERVICE_UNAVAILABLE:
-                case Http_Exception::GATEWAY_TIMEOUT:
+                case HttpException::SERVICE_UNAVAILABLE:
+                case HttpException::GATEWAY_TIMEOUT:
                     self::waitRandomInterval($retry);
                     break;
                 default:
@@ -345,12 +405,13 @@ class IronCore
             }
         }
         $this->reportHttpError($this->last_status, "Service unavailable");
+
         return null;
     }
 
     protected function reportHttpError($status, $text)
     {
-        throw new Http_Exception("http error: {$status} | {$text}", $status);
+        throw new HttpException("http error: {$status} | {$text}", $status);
     }
 
     protected function curlEnabled()
@@ -362,19 +423,23 @@ class IronCore
      * Wait for a random time between 0 and (4^currentRetry * 100) milliseconds
      *
      * @static
+     *
      * @param int $retry currentRetry number
      */
     protected static function waitRandomInterval($retry)
     {
-        $max_delay = pow(4, $retry)*100*1000;
+        $max_delay = pow(4, $retry) * 100 * 1000;
         usleep(rand(0, $max_delay));
     }
 
     protected function compiledHeaders()
     {
-        if ($this->curlEnabled()) {
+        if ($this->curlEnabled())
+        {
             return $this->compiledCurlHeaders();
-        } else {
+        }
+        else
+        {
             return $this->compiledUrlFetchHeaders();
         }
     }
@@ -382,31 +447,38 @@ class IronCore
     protected function compiledCurlHeaders()
     {
         # Set default headers if no headers set.
-        if ($this->headers == null) {
+        if ($this->headers == null)
+        {
             $this->setCommonHeaders();
         }
 
         $headers = array();
-        foreach ($this->headers as $k => $v) {
+        foreach ($this->headers as $k => $v)
+        {
             $headers[] = "$k: $v";
         }
+
         return $headers;
     }
 
     protected function compiledUrlFetchHeaders()
     {
         # Set default headers if no headers set.
-        if ($this->headers == null) {
+        if ($this->headers == null)
+        {
             $this->setCommonHeaders();
         }
 
         $headers = "";
-        foreach ($this->headers as $k => $v) {
-            if ($k == 'Connection') {
+        foreach ($this->headers as $k => $v)
+        {
+            if ($k == 'Connection')
+            {
                 $v = 'Close';
             }
             $headers .= "$k: $v\r\n";
         }
+
         return $headers;
     }
 
@@ -421,56 +493,5 @@ class IronCore
             'Connection'      => 'Keep-Alive',
             'Keep-Alive'      => '300'
         );
-    }
-}
-
-/**
- * The Http_Exception class represents an HTTP response status that is not 200 OK.
- */
-class Http_Exception extends Exception
-{
-    const NOT_MODIFIED = 304;
-    const BAD_REQUEST = 400;
-    const NOT_FOUND = 404;
-    const NOT_ALLOWED = 405;
-    const CONFLICT = 409;
-    const PRECONDITION_FAILED = 412;
-    const INTERNAL_ERROR = 500;
-    const SERVICE_UNAVAILABLE = 503;
-    const GATEWAY_TIMEOUT = 504;
-}
-
-/**
- * The JSON_Exception class represents an failures of decoding json strings.
- */
-class JSON_Exception extends Exception
-{
-    public $error = null;
-    public $error_code = JSON_ERROR_NONE;
-
-    public function __construct($error_code)
-    {
-        $this->error_code = $error_code;
-        switch($error_code) {
-            case JSON_ERROR_DEPTH:
-                $this->error = 'Maximum stack depth exceeded.';
-                break;
-            case JSON_ERROR_CTRL_CHAR:
-                $this->error = "Unexpected control characted found.";
-                break;
-            case JSON_ERROR_SYNTAX:
-                $this->error = "Syntax error, malformed JSON";
-                break;
-            default:
-                $this->error = $error_code;
-                break;
-
-        }
-        parent::__construct();
-    }
-
-    public function __toString()
-    {
-        return $this->error;
     }
 }
