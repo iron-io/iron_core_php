@@ -5,14 +5,14 @@
  * @link https://github.com/iron-io/iron_core_php
  * @link http://www.iron.io/
  * @link http://dev.iron.io/
- * @version 0.2.1
+ * @version 0.2.3
  * @package IronCore
  * @copyright BSD 2-Clause License. See LICENSE file.
  */
 
 class IronCore
 {
-    protected $core_version = '0.2.1';
+    protected $core_version = '0.2.3';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -251,6 +251,11 @@ class IronCore
                     curl_setopt($this->curl, CURLOPT_URL, $url);
                     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
                     curl_setopt($this->curl, CURLOPT_POST, true);
+                    // php 5.6+ requires this for @file style uploads
+                    if (defined('CURLOPT_SAFE_UPLOAD'))
+                    {
+                        curl_setopt($this->curl, CURLOPT_SAFE_UPLOAD, false);
+                    }
                     if ($data) {
                         curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
                     } else {
