@@ -392,14 +392,7 @@ class IronCore
                 case self::HTTP_ACCEPTED:
                     return $_out;
                 case HttpException::INTERNAL_ERROR:
-                    if (strpos($_out, "EOF") !== false)
-                    {
-                        self::waitRandomInterval($retry);
-                    }
-                    else
-                    {
-                        $this->reportHttpError($this->last_status, $_out);
-                    }
+                    self::waitRandomInterval($retry);                    
                     break;
                 case HttpException::SERVICE_UNAVAILABLE:
                 case HttpException::GATEWAY_TIMEOUT:
