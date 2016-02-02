@@ -290,7 +290,7 @@ class IronCore
                     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
                     curl_setopt($this->curl, CURLOPT_POST, true);
                     // php 5.6+ requires this for @file style uploads
-                    if (defined('CURLOPT_SAFE_UPLOAD'))
+                    if (!class_exists("\CURLFile") && defined('CURLOPT_SAFE_UPLOAD'))
                     {
                         curl_setopt($this->curl, CURLOPT_SAFE_UPLOAD, false);
                     }
@@ -392,7 +392,7 @@ class IronCore
                 case self::HTTP_ACCEPTED:
                     return $_out;
                 case HttpException::INTERNAL_ERROR:
-                    self::waitRandomInterval($retry);                    
+                    self::waitRandomInterval($retry);
                     break;
                 case HttpException::SERVICE_UNAVAILABLE:
                 case HttpException::GATEWAY_TIMEOUT:
