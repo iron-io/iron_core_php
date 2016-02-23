@@ -12,13 +12,13 @@ namespace IronCore;
  */
 class HttpException extends \Exception
 {
-    const NOT_MODIFIED = 304;
-    const BAD_REQUEST = 400;
-    const NOT_FOUND = 404;
-    const NOT_ALLOWED = 405;
-    const CONFLICT = 409;
+    const NOT_MODIFIED        = 304;
+    const BAD_REQUEST         = 400;
+    const NOT_FOUND           = 404;
+    const NOT_ALLOWED         = 405;
+    const CONFLICT            = 409;
     const PRECONDITION_FAILED = 412;
-    const INTERNAL_ERROR = 500;
+    const INTERNAL_ERROR      = 500;
     const SERVICE_UNAVAILABLE = 503;
-    const GATEWAY_TIMEOUT = 504;
+    const GATEWAY_TIMEOUT     = 504;
 }

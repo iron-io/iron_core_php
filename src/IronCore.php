@@ -18,21 +18,21 @@ class IronCore
 
     // should be overridden by child class
     protected $client_version = null;
-    protected $client_name = null;
-    protected $product_name = null;
+    protected $client_name    = null;
+    protected $product_name   = null;
     protected $default_values = null;
 
-    const HTTP_OK = 200;
-    const HTTP_CREATED = 201;
+    const HTTP_OK       = 200;
+    const HTTP_CREATED  = 201;
     const HTTP_ACCEPTED = 202;
 
-    const POST = 'POST';
-    const PUT = 'PUT';
-    const GET = 'GET';
+    const POST   = 'POST';
+    const PUT    = 'PUT';
+    const GET    = 'GET';
     const DELETE = 'DELETE';
-    const PATCH = 'PATCH';
+    const PATCH  = 'PATCH';
 
-    const HEADER_ACCEPT = "application/json";
+    const HEADER_ACCEPT          = "application/json";
     const HEADER_ACCEPT_ENCODING = "gzip, deflate";
 
     protected $url;
@@ -52,17 +52,16 @@ class IronCore
     protected $urlFetchData;
     protected $urlFetchUrl;
 
-    public $max_retries = 5;
-    public $debug_enabled = false;
-    public $ssl_verifypeer = true;
+    public $max_retries        = 5;
+    public $debug_enabled      = false;
+    public $ssl_verifypeer     = true;
     public $connection_timeout = 60;
-    public $proxy = null;
-    public $proxy_userpwd = null;
+    public $proxy              = null;
+    public $proxy_userpwd      = null;
 
     public function __destruct()
     {
-        if ($this->curl != null)
-        {
+        if ($this->curl != null) {
             curl_close($this->curl);
             $this->curl = null;
         }
@@ -75,12 +74,10 @@ class IronCore
 
     protected static function dateRfc3339($timestamp = 0)
     {
-        if ($timestamp instanceof \DateTime)
-        {
+        if ($timestamp instanceof \DateTime) {
             $timestamp = $timestamp->getTimestamp();
         }
-        if (!$timestamp)
-        {
+        if (!$timestamp) {
             $timestamp = time();
         }
 
@@ -90,16 +87,12 @@ class IronCore
     protected static function json_decode($response)
     {
         $data = json_decode($response);
-        if (function_exists('json_last_error'))
-        {
+        if (function_exists('json_last_error')) {
             $json_error = json_last_error();
-            if ($json_error != JSON_ERROR_NONE)
-            {
+            if ($json_error != JSON_ERROR_NONE) {
                 throw new JSONException($json_error);
             }
-        }
-        elseif ($data === null)
-        {
+        } elseif ($data === null) {
             throw new JSONException("Common JSON error");
         }
 
@@ -108,13 +101,10 @@ class IronCore
 
     protected static function homeDir()
     {
-        if ($home_dir = getenv('HOME'))
-        {
+        if ($home_dir = getenv('HOME')) {
             // *NIX
             return $home_dir . DIRECTORY_SEPARATOR;
-        }
-        else
-        {
+        } else {
             // Windows
             return getenv('HOMEDRIVE') . getenv('HOMEPATH') . DIRECTORY_SEPARATOR;
         }
@@ -122,8 +112,7 @@ class IronCore
 
     protected function debug($var_name, $variable)
     {
-        if ($this->debug_enabled)
-        {
+        if ($this->debug_enabled) {
             echo "{$var_name}: " . var_export($variable, true) . "\n";
         }
     }
@@ -144,16 +133,12 @@ class IronCore
      */
     protected function getConfigData($config)
     {
-        if (is_string($config))
-        {
-            if (!file_exists($config))
-            {
+        if (is_string($config)) {
+            if (!file_exists($config)) {
                 throw new \InvalidArgumentException("Config file $config not found");
             }
             $this->loadConfigFile($config);
-        }
-        elseif (is_array($config))
-        {
+        } elseif (is_array($config)) {
             $this->loadFromHash($config);
         }
 
@@ -163,25 +148,21 @@ class IronCore
         $this->loadFromEnv(strtoupper($this->product_name));
         $this->loadFromEnv('IRON');
 
-        if (!ini_get('open_basedir'))
-        {
+        if (!ini_get('open_basedir')) {
             $this->loadConfigFile(self::homeDir() . '.iron.ini');
             $this->loadConfigFile(self::homeDir() . '.iron.json');
         }
 
         $this->loadFromHash($this->default_values);
 
-        if (empty($this->token) || empty($this->project_id))
-        {
+        if (empty($this->token) || empty($this->project_id)) {
             throw new \InvalidArgumentException("token or project_id not found in any of the available sources");
         }
     }
 
-
     protected function loadFromHash($options)
     {
-        if (empty($options))
-        {
+        if (empty($options)) {
             return;
         }
         $this->setVarIfValue('token', $options);
@@ -206,21 +187,15 @@ class IronCore
 
     protected function setVarIfValue($key, $options_or_value)
     {
-        if (!empty($this->$key))
-        {
+        if (!empty($this->$key)) {
             return;
         }
-        if (is_array($options_or_value))
-        {
-            if (!empty($options_or_value[$key]))
-            {
+        if (is_array($options_or_value)) {
+            if (!empty($options_or_value[$key])) {
                 $this->$key = $options_or_value[$key];
             }
-        }
-        else
-        {
-            if (!empty($options_or_value))
-            {
+        } else {
+            if (!empty($options_or_value)) {
                 $this->$key = $options_or_value;
             }
         }
@@ -228,26 +203,21 @@ class IronCore
 
     protected function loadConfigFile($file)
     {
-        if (!file_exists($file))
-        {
+        if (!file_exists($file)) {
             return;
         }
         $data = @parse_ini_file($file, true);
-        if ($data === false)
-        {
+        if ($data === false) {
             $data = json_decode(file_get_contents($file), true);
         }
-        if (!is_array($data))
-        {
+        if (!is_array($data)) {
             throw new \InvalidArgumentException("Config file $file not parsed");
         }
 
-        if (!empty($data[$this->product_name]))
-        {
+        if (!empty($data[$this->product_name])) {
             $this->loadFromHash($data[$this->product_name]);
         }
-        if (!empty($data['iron']))
-        {
+        if (!empty($data['iron'])) {
             $this->loadFromHash($data['iron']);
         }
         $this->loadFromHash($data);
@@ -258,18 +228,14 @@ class IronCore
         $url = "{$this->url}$url";
         $this->debug("API $type", $url);
 
-        if ($this->curl == null && $this->curlEnabled())
-        {
+        if ($this->curl == null && $this->curlEnabled()) {
             $this->curl = curl_init();
         }
-        if (!isset($params['oauth']))
-        {
+        if (!isset($params['oauth'])) {
             $params['oauth'] = $this->token;
         }
-        if ($this->curlEnabled())
-        {
-            switch ($type)
-            {
+        if ($this->curlEnabled()) {
+            switch ($type) {
                 case self::DELETE:
                     curl_setopt($this->curl, CURLOPT_URL, $url);
                     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::DELETE);
@@ -290,16 +256,12 @@ class IronCore
                     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, self::POST);
                     curl_setopt($this->curl, CURLOPT_POST, true);
                     // php 5.6+ requires this for @file style uploads
-                    if (!class_exists("\CURLFile") && defined('CURLOPT_SAFE_UPLOAD'))
-                    {
+                    if (!class_exists("\CURLFile") && defined('CURLOPT_SAFE_UPLOAD')) {
                         curl_setopt($this->curl, CURLOPT_SAFE_UPLOAD, false);
                     }
-                    if ($data)
-                    {
+                    if ($data) {
                         curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
-                    }
-                    else
-                    {
+                    } else {
                         curl_setopt($this->curl, CURLOPT_POSTFIELDS, json_encode($params));
                     }
                     break;
@@ -312,11 +274,9 @@ class IronCore
                     break;
             }
 
-            if (!is_null($this->proxy))
-            {
+            if (!is_null($this->proxy)) {
                 curl_setopt($this->curl, CURLOPT_PROXY, $this->proxy);
-                if (!is_null($this->proxy_userpwd))
-                {
+                if (!is_null($this->proxy_userpwd)) {
                     curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, $this->proxy_userpwd);
                 }
             }
@@ -324,32 +284,27 @@ class IronCore
             curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->compiledCurlHeaders());
             curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connection_timeout);
-        }
-        else
-        {
+        } else {
             $this->debug("Call with URL Fetch", $url);
-            if ($type == self::GET)
-            {
+            if ($type == self::GET) {
                 $url .= '?' . http_build_query($params);
                 $this->urlFetchUrl = $url;
                 $this->urlFetchContext = stream_context_create(array(
                     'http' => array(
                         'method'      => $type,
                         'verify_peer' => $this->ssl_verifypeer,
-                        'header'      => $this->compiledUrlFetchHeaders()
-                    )
+                        'header'      => $this->compiledUrlFetchHeaders(),
+                    ),
                 ));
-            }
-            else
-            {
+            } else {
                 $this->urlFetchUrl = $url;
                 $this->urlFetchContext = stream_context_create(array(
                     'http' => array(
                         'method'      => $type,
                         'verify_peer' => $this->ssl_verifypeer,
                         'header'      => $this->compiledUrlFetchHeaders(),
-                        'content'     => json_encode($params)
-                    )
+                        'content'     => json_encode($params),
+                    ),
                 ));
             }
         }
@@ -359,34 +314,26 @@ class IronCore
 
     protected function callWithRetries()
     {
-        for ($retry = 0; $retry < $this->max_retries; $retry++)
-        {
-            if ($this->curlEnabled())
-            {
+        for ($retry = 0; $retry < $this->max_retries; $retry++) {
+            if ($this->curlEnabled()) {
                 $_out = curl_exec($this->curl);
-                if ($_out === false)
-                {
+                if ($_out === false) {
                     $this->reportHttpError(0, curl_error($this->curl));
                 }
                 $this->last_status = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
-            }
-            else
-            {
+            } else {
                 try
                 {
                     $_out = file_get_contents($this->urlFetchUrl, false, $this->urlFetchContext);
                     $responseHeader = explode(' ', $http_response_header[0]);
                     $this->last_status = $responseHeader[1];
-                }
-                catch (\Exception $e)
-                {
+                } catch (\Exception $e) {
                     $this->reportHttpError(0, $e->getMessage());
 
                     return null;
                 }
             }
-            switch ($this->last_status)
-            {
+            switch ($this->last_status) {
                 case self::HTTP_OK:
                 case self::HTTP_CREATED:
                 case self::HTTP_ACCEPTED:
@@ -432,12 +379,9 @@ class IronCore
 
     protected function compiledHeaders()
     {
-        if ($this->curlEnabled())
-        {
+        if ($this->curlEnabled()) {
             return $this->compiledCurlHeaders();
-        }
-        else
-        {
+        } else {
             return $this->compiledUrlFetchHeaders();
         }
     }
@@ -445,14 +389,12 @@ class IronCore
     protected function compiledCurlHeaders()
     {
         # Set default headers if no headers set.
-        if ($this->headers == null)
-        {
+        if ($this->headers == null) {
             $this->setCommonHeaders();
         }
 
         $headers = array();
-        foreach ($this->headers as $k => $v)
-        {
+        foreach ($this->headers as $k => $v) {
             $headers[] = "$k: $v";
         }
 
@@ -462,16 +404,13 @@ class IronCore
     protected function compiledUrlFetchHeaders()
     {
         # Set default headers if no headers set.
-        if ($this->headers == null)
-        {
+        if ($this->headers == null) {
             $this->setCommonHeaders();
         }
 
         $headers = "";
-        foreach ($this->headers as $k => $v)
-        {
-            if ($k == 'Connection')
-            {
+        foreach ($this->headers as $k => $v) {
+            if ($k == 'Connection') {
                 $v = 'Close';
             }
             $headers .= "$k: $v\r\n";
@@ -489,7 +428,7 @@ class IronCore
             'Accept'          => self::HEADER_ACCEPT,
             'Accept-Encoding' => self::HEADER_ACCEPT_ENCODING,
             'Connection'      => 'Keep-Alive',
-            'Keep-Alive'      => '300'
+            'Keep-Alive'      => '300',
         );
     }
 }
