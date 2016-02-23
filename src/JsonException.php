@@ -12,14 +12,13 @@ namespace IronCore;
  */
 class JSONException extends \Exception
 {
-    public $error = null;
+    public $error      = null;
     public $error_code = JSON_ERROR_NONE;
 
     public function __construct($error_code)
     {
         $this->error_code = $error_code;
-        switch ($error_code)
-        {
+        switch ($error_code) {
             case JSON_ERROR_DEPTH:
                 $this->error = 'Maximum stack depth exceeded.';
                 break;
