@@ -172,6 +172,7 @@ class IronCore
         $this->setVarIfValue('port', $options);
         $this->setVarIfValue('api_version', $options);
         $this->setVarIfValue('encryption_key', $options);
+        $this->setVarIfvalue('connection_timeout', $options);
     }
 
     protected function loadFromEnv($prefix)
