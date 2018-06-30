@@ -173,6 +173,8 @@ class IronCore
         $this->setVarIfValue('port', $options);
         $this->setVarIfValue('api_version', $options);
         $this->setVarIfValue('encryption_key', $options);
+        $this->setVarIfValue('proxy', $options);
+        $this->setVarIfValue('proxy_userpwd', $options);
     }
 
     protected function loadFromEnv($prefix)
@@ -184,6 +186,8 @@ class IronCore
         $this->setVarIfValue('port', getenv($prefix . "_PORT"));
         $this->setVarIfValue('api_version', getenv($prefix . "_API_VERSION"));
         $this->setVarIfValue('encryption_key', getenv($prefix . "_ENCRYPTION_KEY"));
+        $this->setVarIfValue('proxy', getenv($prefix. "_PROXY"));
+        $this->setVarIfValue('proxy_userpwd', getenv($prefix. "_PROXY_USERPWD"));
     }
 
     protected function setVarIfValue($key, $options_or_value)
