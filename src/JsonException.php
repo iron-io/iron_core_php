@@ -10,7 +10,7 @@ namespace IronCore;
  * @package IronCore
  * @author Tino Ehrich (tino@bigpun.me)
  */
-class JSONException extends \Exception
+class JsonException extends \Exception
 {
     public $error      = null;
     public $error_code = JSON_ERROR_NONE;

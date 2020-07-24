@@ -91,10 +91,10 @@ class IronCore
         if (function_exists('json_last_error')) {
             $json_error = json_last_error();
             if ($json_error != JSON_ERROR_NONE) {
-                throw new JSONException($json_error);
+                throw new JsonException($json_error);
             }
         } elseif ($data === null) {
-            throw new JSONException("Common JSON error");
+            throw new JsonException("Common JSON error");
         }
 
         return $data;
