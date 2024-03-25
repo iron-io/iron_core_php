@@ -14,7 +14,7 @@ namespace IronCore;
  */
 class IronCore
 {
-    protected $core_version = '1.0.2';
+    protected $core_version = '1.0.4';
 
     // should be overridden by child class
     protected $client_version = null;
@@ -428,7 +428,6 @@ class IronCore
             'User-Agent'      => $this->userAgent(),
             'Content-Type'    => 'application/json',
             'Accept'          => self::HEADER_ACCEPT,
-            'Accept-Encoding' => self::HEADER_ACCEPT_ENCODING,
             'Connection'      => 'Keep-Alive',
             'Keep-Alive'      => '300',
         );
